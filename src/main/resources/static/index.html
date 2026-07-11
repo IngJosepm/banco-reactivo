@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Libro Mayor — Núcleo transaccional</title>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,500;0,700;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F5F0E3; --paper-2:#EDE6D4; --ink:#241F16; --ink-soft:#6B6252;
+    --rule:#D4C9AE; --debe:#8E2B1B; --haber:#1E5637; --seal:#1D4B70;
+  }
+
+  #bannerFraude{
+  position:fixed; top:0; left:0; right:0; z-index:200;
+  background:#8E2B1B; color:#fff; padding:14px 20px; text-align:center;
+  font-family:Inter,sans-serif; font-size:15px;
+  transform:translateY(-100%); transition:transform .35s ease;
+}
+#bannerFraude.ver{ transform:translateY(0); }
+  *{box-sizing:border-box}
+  body{margin:0; background:#E4DDCB; color:var(--ink); font-family:Inter,system-ui,sans-serif;
+       line-height:1.55; padding:24px}
+  .hoja{max-width:1240px; margin:0 auto; background:var(--paper);
+        border:1px solid var(--rule); border-radius:4px}
+  header{padding:22px 26px 18px; border-bottom:2px solid var(--ink);
+         display:flex; align-items:baseline; gap:18px; flex-wrap:wrap}
+  h1{font-family:Spectral,Georgia,serif; font-weight:700; font-size:26px; margin:0}
+  .lema{font-size:12px; color:var(--ink-soft); font-style:italic; font-family:Spectral,serif}
+  .activa{margin-left:auto; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--seal)}
+
+  main{display:grid; grid-template-columns:300px 320px 1fr; min-height:560px}
+  @media(max-width:1000px){ main{grid-template-columns:1fr} }
+  .col{padding:20px 24px; border-right:1px solid var(--rule)}
+  .libro{padding:20px 24px; background:
+    repeating-linear-gradient(var(--paper), var(--paper) 33px, var(--rule) 33px, var(--rule) 34px)}
+
+  h2{font-family:Spectral,serif; font-size:13px; font-weight:700; margin:0 0 12px;
+     text-transform:uppercase; letter-spacing:.09em; color:var(--ink-soft)}
+  label{display:block; font-size:12px; color:var(--ink-soft); margin:9px 0 3px}
+  input,select{width:100%; padding:8px 10px; border:1px solid var(--rule); border-radius:3px;
+    background:#FCFAF3; color:var(--ink); font:inherit; font-size:14px}
+  input:focus,select:focus{outline:2px solid var(--seal); outline-offset:1px}
+  button{font:inherit; font-size:13px; font-weight:500; cursor:pointer; border-radius:3px;
+    border:1px solid var(--ink); background:var(--ink); color:var(--paper); padding:9px 14px; margin-top:12px}
+  button:hover{opacity:.86}
+  button.sec{background:transparent; color:var(--ink)}
+  button.doble{background:var(--seal); border-color:var(--seal); color:#fff; width:100%}
+  button.mini{padding:6px 10px; margin:0; font-size:12px}
+  .fila{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+
+  .noti{
+  background:var(--ink); color:var(--paper); padding:10px 16px; border-radius:4px;
+  font-size:13px; box-shadow:0 4px 16px rgba(0,0,0,.25);
+  animation:entra .3s ease; font-family:Inter,sans-serif;
+}
+@keyframes entra{ from{opacity:0; transform:translateX(20px)} to{opacity:1; transform:none} }
+
+  .cuenta{
+    display:flex; justify-content:space-between; align-items:center; gap:8px;
+    padding:9px 11px; border:1px solid var(--rule); border-radius:3px;
+    background:#FCFAF3; margin-bottom:7px; cursor:pointer;
+  }
+  .cuenta:hover{border-color:var(--seal)}
+  .cuenta.sel{border:2px solid var(--ink); background:var(--paper-2)}
+  .cuenta .n{font-family:Spectral,serif; font-weight:700; font-size:15px}
+  .cuenta .i{font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--ink-soft)}
+  .cuenta .s{font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:500}
+
+  .saldo{border:2px solid var(--ink); border-radius:3px; padding:14px 16px; margin:14px 0;
+         background:var(--paper-2); text-align:center}
+  .saldo .etq{font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-soft)}
+  .saldo .num{font-family:Spectral,serif; font-weight:700; font-size:38px; line-height:1.1; margin:2px 0}
+  .saldo .nota{font-size:11px; color:var(--ink-soft); font-style:italic; font-family:Spectral,serif}
+  .saldo.pasado{border-style:dashed; border-color:var(--seal)}
+  .saldo.pasado .num{color:var(--seal)}
+
+  .asiento{display:grid; grid-template-columns:32px 1fr 108px; align-items:baseline; height:34px; font-size:14px}
+  .asiento .v{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-soft)}
+  .asiento .desc{font-family:Spectral,serif; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .asiento .fecha{font-size:10px; color:var(--ink-soft); font-family:'JetBrains Mono',monospace; margin-left:8px}
+  .asiento .monto{text-align:right; font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:500}
+  .asiento .monto.pos{color:var(--haber)} .asiento .monto.neg{color:var(--debe)}
+  .asiento.futuro{opacity:.22}
+  .vacio{color:var(--ink-soft); font-style:italic; font-family:Spectral,serif; padding:8px 0}
+
+  .tiempo{border-top:2px solid var(--ink); margin-top:18px; padding-top:14px}
+  .tiempo .ctrl{display:flex; align-items:center; gap:10px}
+  input[type=range]{flex:1; accent-color:var(--seal)}
+  .momento{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--seal); text-align:right; margin-top:4px}
+
+  .aviso{padding:9px 12px; border-radius:3px; font-size:13px; margin-bottom:12px; display:none}
+  .aviso.ok{display:block; background:#E3EDE4; border:1px solid var(--haber); color:var(--haber)}
+  .aviso.err{display:block; background:#F2E2DE; border:1px solid var(--debe); color:var(--debe)}
+  .aviso.info{display:block; background:#E1E9F0; border:1px solid var(--seal); color:var(--seal)}
+  .oculto{display:none}
+  .pista{font-size:11px; color:var(--ink-soft); font-style:italic; font-family:Spectral,serif; margin-top:6px}
+  .traza{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-soft);
+         border-left:2px solid var(--rule); padding:6px 0 6px 10px; margin-top:8px; display:none}
+  .traza.ver{display:block}
+</style>
+</head>
+<body>
+  <div id="bannerFraude"></div>
+  <div id="notis" style="position:fixed; top:16px; right:16px; z-index:99; display:flex; flex-direction:column; gap:8px"></div>
+<div class="hoja">
+
+  <header>
+    <div>
+      <h1>Libro Mayor</h1>
+      <div class="lema">El saldo no se guarda. Se calcula.</div>
+    </div>
+    <div class="activa" id="activa">ninguna cuenta seleccionada</div>
+  </header>
+
+  <main>
+    <!-- ===== COLUMNA 1: cuentas ===== -->
+    <div class="col">
+      <div id="aviso" class="aviso"></div>
+
+      <h2>Cuentas</h2>
+      <div id="listaCuentas"><div class="vacio">Ninguna todavía.</div></div>
+
+      <h2 style="margin-top:20px">Abrir cuenta</h2>
+      <label for="titular">Titular</label>
+      <input id="titular" value="María Lovelace">
+      <button onclick="abrir()">Abrir cuenta</button>
+      <div class="pista">Se emite el hecho «CuentaAbierta». Nada más.</div>
+    </div>
+
+    <!-- ===== COLUMNA 2: operaciones ===== -->
+    <div class="col">
+      <div id="sinCuenta">
+        <div class="vacio">Selecciona una cuenta de la lista para operar.</div>
+      </div>
+
+      <div id="conCuenta" class="oculto">
+        <div class="saldo" id="cajaSaldo">
+          <div class="etq" id="etqSaldo">Saldo actual</div>
+          <div class="num" id="numSaldo">0.00</div>
+          <div class="nota" id="notaSaldo">derivado de 0 eventos</div>
+        </div>
+
+        <h2>Depósito / Retiro</h2>
+        <label for="monto">Monto</label>
+        <input id="monto" type="number" step="0.01" value="500">
+        <label for="concepto">Concepto</label>
+        <input id="concepto" value="Nómina">
+        <div class="fila">
+          <button onclick="mover('depositos')">Depositar</button>
+          <button class="sec" onclick="mover('retiros')">Retirar</button>
+        </div>
+
+        <h2 style="margin-top:22px">Transferir</h2>
+        <label for="destino">A la cuenta</label>
+        <select id="destino"></select>
+        <label for="montoT">Monto</label>
+        <input id="montoT" type="number" step="0.01" value="200">
+        <label for="conceptoT">Concepto</label>
+        <input id="conceptoT" value="Alquiler">
+        <button style="width:100%" onclick="transferir(1)">Transferir</button>
+        <button class="doble" onclick="transferir(2)">Enviar dos veces (doble clic)</button>
+        <div class="pista">El botón azul manda la <b>misma</b> petición dos veces, con la misma
+          clave de idempotencia. Solo debe registrarse un movimiento.</div>
+        <div class="traza" id="traza"></div>
+      </div>
+    </div>
+
+    <!-- ===== COLUMNA 3: libro ===== -->
+    <div class="libro">
+      <h2>Asientos — solo se añaden, nunca se corrigen</h2>
+      <div id="asientos"><div class="vacio">Selecciona una cuenta.</div></div>
+
+      <div class="tiempo oculto" id="secTiempo">
+        <h2>Viaje en el tiempo</h2>
+        <div class="ctrl">
+          <button class="sec mini" onclick="irA(0)">Inicio</button>
+          <input type="range" id="linea" min="0" max="0" value="0" oninput="irA(this.value)">
+          <button class="sec mini" onclick="irA(total)">Hoy</button>
+        </div>
+        <div class="momento" id="momento"></div>
+        <div class="pista">Cada tirón dispara un <code>GET /saldo?en=…</code> real:
+          el servidor reproduce los eventos hasta ese instante.</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+const API = 'http://localhost:8090';
+let cuentas = [], activa = null, eventos = [], total = 0;
+
+const $ = id => document.getElementById(id);
+const fmt = n => Number(n||0).toLocaleString('es-PE',{minimumFractionDigits:2, maximumFractionDigits:2});
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const corto = id => id ? id.slice(0,8) : '';
+
+function aviso(msg, tipo){
+  const a = $('aviso'); a.className = 'aviso ' + tipo; a.innerHTML = msg;
+  setTimeout(()=>{ a.className = 'aviso'; }, 7000);
+}
+
+async function api(metodo, ruta, cuerpo, cabeceras){
+  const res = await fetch(API + ruta, {
+    method: metodo,
+    headers: Object.assign({'Content-Type':'application/json'}, cabeceras || {}),
+    body: cuerpo ? JSON.stringify(cuerpo) : undefined
+  });
+  const texto = await res.text();
+  let datos; try{ datos = JSON.parse(texto); }catch{ datos = texto; }
+  if(!res.ok) throw new Error(datos?.message || ('HTTP ' + res.status));
+  return datos;
+}
+
+/* ---------- cuentas ---------- */
+async function cargarCuentas(){
+  try{
+    cuentas = await api('GET','/api/cuentas');
+  }catch(e){ aviso(conexion(e),'err'); return; }
+
+  $('listaCuentas').innerHTML = cuentas.length ? cuentas.map(c => `
+    <div class="cuenta ${activa && c.id===activa.id ? 'sel':''}" onclick="seleccionar('${c.id}')">
+      <div>
+        <div class="n">${esc(c.titular)}</div>
+        <div class="i">${corto(c.id)} · v${c.version}</div>
+      </div>
+      <div class="s">${fmt(c.saldo)}</div>
+    </div>`).join('') : '<div class="vacio">Ninguna todavía.</div>';
+
+  const otras = cuentas.filter(c => !activa || c.id !== activa.id);
+  $('destino').innerHTML = otras.length
+    ? otras.map(c => `<option value="${c.id}">${esc(c.titular)} · ${corto(c.id)}</option>`).join('')
+    : '<option value="">— abre otra cuenta —</option>';
+}
+
+async function abrir(){
+  try{
+    const c = await api('POST','/api/cuentas',{ titular: $('titular').value.trim() });
+    await cargarCuentas();
+    await seleccionar(c.id);
+    aviso('Cuenta abierta. Primer hecho registrado.','ok');
+  }catch(e){ aviso(conexion(e),'err'); }
+}
+
+async function seleccionar(id){
+  activa = cuentas.find(c => c.id === id) || null;
+  if(!activa) return;
+  $('activa').textContent = activa.titular + ' · ' + corto(activa.id);
+  $('sinCuenta').classList.add('oculto');
+  $('conCuenta').classList.remove('oculto');
+  $('secTiempo').classList.remove('oculto');
+  await refrescar();
+}
+
+/* ---------- movimientos ---------- */
+async function mover(tipo){
+  try{
+    await api('POST', `/api/cuentas/${activa.id}/${tipo}`, {
+      monto: Number($('monto').value),
+      concepto: $('concepto').value.trim() || (tipo==='depositos'?'Depósito':'Retiro')
+    });
+    await refrescar();
+    aviso(tipo==='depositos' ? 'Depósito asentado.' : 'Retiro asentado.','ok');
+  }catch(e){ aviso(conexion(e),'err'); }
+}
+
+/* ---------- transferencia + idempotencia ---------- */
+async function transferir(veces){
+  const destinoId = $('destino').value;
+  if(!destinoId){ aviso('Necesitas una segunda cuenta como destino.','err'); return; }
+
+  // La clave la genera el CLIENTE. Un reintento reusa la misma clave.
+  const clave = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()));
+  const cuerpo = {
+    origenId: activa.id, destinoId,
+    monto: Number($('montoT').value),
+    concepto: $('conceptoT').value.trim() || 'Transferencia'
+  };
+
+  const t = $('traza'); t.classList.add('ver');
+  t.innerHTML = `Idempotency-Key: ${clave.slice(0,18)}…<br>`;
+
+  try{
+    for(let i=1; i<=veces; i++){
+      const r = await api('POST','/api/transferencias', cuerpo, {'Idempotency-Key': clave});
+      t.innerHTML += `Envío ${i}: 200 OK · repetida=<b>${r.repetida}</b><br>`;
+    }
+    await refrescar();
+    aviso(veces === 2
+      ? 'Dos peticiones enviadas, <b>un solo movimiento</b>. La segunda devolvió repetida=true.'
+      : 'Transferencia realizada.', veces === 2 ? 'info' : 'ok');
+  }catch(e){
+    t.innerHTML += `Error: ${esc(e.message)}<br>`;
+    aviso(conexion(e),'err');
+    await refrescar();
+  }
+}
+
+/* ---------- libro ---------- */
+async function refrescar(){
+  eventos = await api('GET', `/api/cuentas/${activa.id}/eventos`);
+  total = eventos.length;
+  $('linea').max = total; $('linea').value = total;
+  pintar(total);
+  const c = await api('GET', `/api/cuentas/${activa.id}`);
+  activa = c;
+  mostrarSaldo(c.saldo, total, false);
+  await cargarCuentas();
+}
+
+function pintar(hasta){
+  if(!eventos.length){ $('asientos').innerHTML = '<div class="vacio">Sin asientos.</div>'; return; }
+  $('asientos').innerHTML = eventos.map((e,i) => {
+    const futuro = i >= hasta ? ' futuro' : '';
+    const f = new Date(e.ocurridoEn).toLocaleString('es-PE',{dateStyle:'short', timeStyle:'medium'});
+    let desc = '', monto = '';
+    switch(e.tipo){
+      case 'CuentaAbierta':
+        desc = `<b>Cuenta abierta</b> — ${esc(e.concepto)}`; break;
+      case 'DineroDepositado':
+        desc = `<b>Depósito</b> — ${esc(e.concepto)}`;
+        monto = `<span class="monto pos">+${fmt(e.monto)}</span>`; break;
+      case 'DineroRetirado':
+        desc = `<b>Retiro</b> — ${esc(e.concepto)}`;
+        monto = `<span class="monto neg">−${fmt(e.monto)}</span>`; break;
+      case 'TransferenciaEnviada':
+        desc = `<b>Enviado</b> a ${corto(e.contraparte)} — ${esc(e.concepto)}`;
+        monto = `<span class="monto neg">−${fmt(e.monto)}</span>`; break;
+      case 'TransferenciaRecibida':
+        desc = `<b>Recibido</b> de ${corto(e.contraparte)} — ${esc(e.concepto)}`;
+        monto = `<span class="monto pos">+${fmt(e.monto)}</span>`; break;
+    }
+    return `<div class="asiento${futuro}">
+      <span class="v">${e.version}</span>
+      <span class="desc">${desc}<span class="fecha">${f}</span></span>
+      ${monto || '<span class="monto"></span>'}
+    </div>`;
+  }).join('');
+}
+
+function conectarAlertas(){
+  const es = new EventSource(API + '/api/alertas');
+  es.onmessage = (e) => {
+    const a = JSON.parse(e.data);
+    mostrarAlerta(a);
+  };
+}
+
+function mostrarAlerta(a){
+  const banner = document.getElementById('bannerFraude');
+  banner.innerHTML = `⚠ <b>FRAUDE DETECTADO</b> — ${a.motivo}` +
+                     (a.titular ? ` (cuenta de ${a.titular})` : '');
+  banner.classList.add('ver');
+  clearTimeout(window._alertaTimer);
+  window._alertaTimer = setTimeout(()=> banner.classList.remove('ver'), 8000);
+}
+
+conectarAlertas();
+
+async function irA(indice){
+  const i = Number(indice);
+  $('linea').value = i;
+  pintar(i);
+  if(i === 0){ mostrarSaldo(0,0,true); $('momento').textContent = 'antes del primer hecho'; return; }
+  const instante = eventos[i-1].ocurridoEn;
+  const esHoy = i === total;
+  try{
+    const c = await api('GET', `/api/cuentas/${activa.id}/saldo?en=${encodeURIComponent(instante)}`);
+    mostrarSaldo(c.saldo, i, !esHoy);
+    $('momento').textContent = esHoy ? 'estado actual'
+      : new Date(instante).toLocaleString('es-PE',{dateStyle:'short', timeStyle:'medium'});
+  }catch(e){ aviso(conexion(e),'err'); }
+}
+
+function mostrarSaldo(valor, n, pasado){
+  $('numSaldo').textContent = fmt(valor);
+  $('notaSaldo').textContent = `derivado de ${n} evento${n===1?'':'s'}`;
+  $('etqSaldo').textContent = pasado ? 'Saldo reconstruido' : 'Saldo actual';
+  $('cajaSaldo').classList.toggle('pasado', !!pasado);
+}
+
+function conexion(e){
+  return /fetch|Failed/i.test(e.message)
+    ? 'No responde el backend. ¿Está corriendo en el puerto 8090?'
+    : esc(e.message);
+}
+
+function conectarStream(){
+  const es = new EventSource(API + '/api/stream');
+
+  es.onmessage = (e) => {
+    const evt = JSON.parse(e.data);
+    if(evt.tipo === 'PING') return;           // ignora los latidos
+    notificar(evt);                            // muestra el aviso emergente
+    cargarCuentas();                           // refresca los saldos de la lista
+    if(activa) refrescar();                    // y el libro, si hay cuenta abierta
+  };
+
+  es.onerror = () => {
+    // EventSource reintenta solo; solo lo registramos.
+    console.log('Stream desconectado, reintentando…');
+  };
+}
+
+function notificar(evt){
+  const zona = document.getElementById('notis');
+  const div = document.createElement('div');
+  div.className = 'noti';
+  const verbo = {
+    CuentaAbierta:'Nueva cuenta', DineroDepositado:'Depósito',
+    DineroRetirado:'Retiro', TransferenciaEnviada:'Transferencia enviada',
+    TransferenciaRecibida:'Transferencia recibida'
+  }[evt.tipo] || evt.tipo;
+  div.innerHTML = `<b>${verbo}</b>` + (evt.monto ? ` · ${Number(evt.monto).toLocaleString('es-PE',{minimumFractionDigits:2})}` : '');
+  zona.prepend(div);
+  setTimeout(()=> div.remove(), 5000);
+}
+
+conectarStream();
+
+cargarCuentas();
+</script>
+</body>
+</html>
