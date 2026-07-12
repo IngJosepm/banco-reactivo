@@ -5,7 +5,7 @@ import com.ledger.api.Dtos;
 import com.ledger.api.Dtos.TransferenciaResponse;
 import com.ledger.domain.Cuenta;
 import com.ledger.domain.EventoCuenta;
-import com.ledger.kafka.EventoProductor;
+import com.ledger.stream.PublicadorEventos;
 import com.ledger.store.EventStore;
 import com.ledger.store.IdempotenciaStore;
 import com.ledger.stream.EventoBus;
@@ -26,10 +26,10 @@ public class TransferenciaService {
     private final IdempotenciaStore idem;
     private final CuentaService cuentas;
     private final ObjectMapper mapper;
-    private final EventoProductor productor;
+    private final PublicadorEventos productor;
 
     public TransferenciaService(EventStore store, IdempotenciaStore idem,
-                                CuentaService cuentas, ObjectMapper mapper , EventoProductor productor) {
+                                CuentaService cuentas, ObjectMapper mapper , PublicadorEventos productor) {
         this.store = store;
         this.idem = idem;
         this.cuentas = cuentas;
