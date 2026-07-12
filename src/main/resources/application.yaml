@@ -17,7 +17,7 @@ spring:
       auto-offset-reset: latest
   sql:
     init:
-      mode: always
+      mode: ${SQL_INIT_MODE:always}
 
 logging:
   level:
